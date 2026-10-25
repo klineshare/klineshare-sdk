@@ -135,11 +135,7 @@ def test_client_enforce_clamps_minute_and_daily() -> None:
 # ----- live -----
 def _live_pro() -> Optional[Client]:
     root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-    for path in (
-        os.path.join(root, '.env'),
-        os.path.join(os.path.dirname(root), 'klineshare-live', '.env'),
-        os.path.join(os.path.dirname(root), 'klineshare-level2', '.env'),
-    ):
+    for path in (os.path.join(root, '.env'),):
         if os.path.isfile(path):
             with open(path, encoding='utf-8') as f:
                 for line in f:

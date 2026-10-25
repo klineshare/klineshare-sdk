@@ -89,6 +89,8 @@ def test_resolve_path_policy():
     assert resolve_path_policy('/v1/hkstock/realtime').scope == 'hkstock_realtime'
     assert resolve_path_policy('/v2/hkstock/kline').kind == 'kline'
     assert resolve_path_policy('/v1/moneyflow/live').scope == 'moneyflow'
+    assert resolve_path_policy('/v2/market-kline').scope == 'market_kline_v2'
+    assert resolve_path_policy('/v2/market-kline').kind == 'other'
 
 
 def test_preflight_clamps_count():

@@ -123,6 +123,32 @@ class MarketEndpoints:
         )
         return self._get('/v2/auction', params, **opts)
 
+    def market_kline_v2(
+        self,
+        *,
+        all: bool = True,
+        market: Optional[str] = None,
+        period: Optional[int] = None,
+        count: Optional[int] = None,
+        **opts: Any,
+    ) -> Any:
+        """全市场近端分钟 K compact ``GET /v2/market-kline``（独立 scope ``market_kline_v2``）。
+
+        仅支持 ``all=True``（默认）；可加 ``market='SS'|'SZ'|'BJ'|'CN'``（不含美股）。
+        ``period`` 当前仅 ``60``；``count`` 默认 2、上限 5。
+        体量大，服务端强制 ``Accept-Encoding: gzip``（SDK Session 已默认协商）。
+        返回默认展开为行（``bars`` 嵌套列表）/ DataFrame。
+        """
+        if not all:
+            raise ValueError('market_kline_v2 仅支持 all=True')
+        params = {
+            'all': 1,
+            'market': market,
+            'period': period,
+            'count': count,
+        }
+        return self._get('/v2/market-kline', params, **opts)
+
     def trend(
         self,
         symbol: Optional[str] = None,
@@ -171,7 +197,7 @@ class MarketEndpoints:
           - ``multi``（默认）：多标的一次请求
           - ``single``：强制按标的拆成多次请求再合并
           - ``auto``：日线及以上且 ``标的数×count > kline_heavy_threshold`` 时按标的拆分
-            （防瞬时大包；会多占 RPM）。``raw=True`` 时不拆分。
+            （客户端启发式，减小单次响应体积；会多占 RPM）。``raw=True`` 时不拆分。
         """
         from klineshare.limits.quota import _split_symbols, should_split_kline_batch
 

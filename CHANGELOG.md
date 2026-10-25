@@ -5,6 +5,13 @@ All notable changes to this project are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Versioning follows [docs/DEVELOPMENT.md §10](docs/DEVELOPMENT.md).
 
+## [0.2.7] - 2026-10-25
+
+### Added
+
+- `market_kline_v2` — 全市场近端分钟 K compact ``GET /v2/market-kline``（仅 ``all=True``；独立 scope ``market_kline_v2``）
+- compact 展开支持嵌套 ``bars``（``bars_fields`` / ``bars_sep`` / ``bars_row_sep``）
+
 ## [0.2.6] - 2026-10-16
 
 ### Added
@@ -36,7 +43,7 @@ Versioning follows [docs/DEVELOPMENT.md §10](docs/DEVELOPMENT.md).
 
 ### Changed
 
-- Level2 ``ks-live`` 下载改为请求公开接口 ``GET /public/v1/sdk/ks-live``（携带 SDK 版本与平台），不再本地拼接 OSS 路径；缓存旁路 ``*.meta.json`` 按上游 ``url`` / ``sha256`` 失效重下
+- Level2 ``ks-live`` 下载改为请求公开接口 ``GET /public/v1/sdk/ks-live``（携带 SDK 版本与平台）；缓存旁路 ``*.meta.json`` 按上游 ``url`` / ``sha256`` 失效重下
 
 ## [0.2.3] - 2026-09-29
 

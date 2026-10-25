@@ -142,11 +142,7 @@ def test_forbidden_endpoint_maps_to_auth_error() -> None:
 
 def _load_env() -> None:
     root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-    for path in (
-        os.path.join(root, '.env'),
-        os.path.join(os.path.dirname(root), 'klineshare-live', '.env'),
-        os.path.join(os.path.dirname(root), 'klineshare-level2', '.env'),
-    ):
+    for path in (os.path.join(root, '.env'),):
         if not os.path.isfile(path):
             continue
         with open(path, encoding='utf-8') as f:

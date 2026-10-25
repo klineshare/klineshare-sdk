@@ -29,3 +29,6 @@ htmlcov/
 
 # Generated API sample cache (regenerate via scripts/gen_api_usage_doc.py)
 docs/_api_samples_cache.json
+
+# Local cross-repo HEAD baseline (do not publish)
+docs/VERSION_BASELINE.local.md

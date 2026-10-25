@@ -24,7 +24,7 @@ _ENV_BIN = 'KLINESHARE_KS_LIVE'
 _ENV_CACHE = 'KLINESHARE_KS_LIVE_DIR'
 _ENV_URL = 'KLINESHARE_KS_LIVE_URL'
 
-# Align with external_api.level2_normalize.CHANNELS / ks-live ChannelOrder.
+# Public Level2 channel ids (order matches ks-live subscription).
 LEVEL2_CHANNELS = ('depth', 'orders', 'trades', 'entrust')
 _DEFAULT_CHANNELS = list(LEVEL2_CHANNELS)
 

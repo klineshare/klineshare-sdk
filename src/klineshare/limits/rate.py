@@ -1,4 +1,4 @@
-"""Local fixed-window rate gate (aligned with server minute buckets)."""
+"""Local fixed-window rate gate (minute buckets; public docs use per-minute limits)."""
 
 from __future__ import annotations
 
@@ -13,8 +13,9 @@ class RateGate:
     """
     Process-local rate limiter.
 
-    Window buckets use ``floor(now / window_secs)``, matching the server's
-    fixed-window style (see klineshare ``rate_limit_bucket``).
+    Window buckets use ``floor(now / window_secs)`` so local pacing roughly
+    matches the public "requests per minute" fixed window. Server 429 +
+    ``retry_after`` remains authoritative.
     """
 
     def __init__(self) -> None:

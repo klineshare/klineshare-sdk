@@ -303,6 +303,31 @@ def build_matrix() -> List[ApiEntry]:
                 ),
             ),
         ),
+        ApiEntry(
+            'market_kline_v2', 'market', '/v2/market-kline', 'http',
+            '全市场近端分钟 K compact（仅 all=True；独立 scope）',
+            (
+                UsageCase(
+                    'direct', '全市场（推荐）',
+                    lambda p: p.market_kline_v2(all=True, market='SS', period=60, count=2),
+                    '/v2/market-kline',
+                    expect_params={'all': 1, 'market': 'SS', 'period': 60, 'count': 2},
+                    live=False,
+                ),
+                UsageCase(
+                    'edge', '沪深京（CN）',
+                    lambda p: p.market_kline_v2(all=True, market='CN', count=2),
+                    '/v2/market-kline',
+                    expect_params={'all': 1, 'market': 'CN', 'count': 2},
+                    live=False,
+                ),
+                UsageCase(
+                    'escape', 'market_kline_v2 via get(/v2/market-kline)',
+                    lambda p: p.get('/v2/market-kline', params={'all': 1}),
+                    '/v2/market-kline', live=False,
+                ),
+            ),
+        ),
         _http(
             'trend', 'market', '/v1/trend', '分时',
             direct=lambda p: p.trend(symbol=S),

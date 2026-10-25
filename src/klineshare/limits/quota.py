@@ -8,7 +8,8 @@ from klineshare.errors import KlineShareQuotaError
 from klineshare.limits.policy import MAX_KLINE_BATCH_SYMBOLS, PathPolicy, resolve_path_policy
 from klineshare.limits.snapshot import LimitsSnapshot
 
-# Daily+ multi-symbol load threshold: n_symbols * count
+# Client-only heuristic for batch="auto": split when n_symbols * count exceeds this.
+# Not a server guarantee; override via Client(kline_heavy_threshold=...).
 DEFAULT_KLINE_HEAVY_THRESHOLD = 3000
 
 

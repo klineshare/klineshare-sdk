@@ -68,6 +68,8 @@ _CASES: List[Tuple[str, Dict[str, Any], str]] = [
     ('realtime_v2', {'symbol': '600519.SS'}, '/v2/realtime'),
     ('auction', {'symbol': '600519.SS'}, '/v1/auction'),
     ('auction_v2', {'symbol': '600519.SS'}, '/v2/auction'),
+    ('market_kline_v2', {'all': True, 'market': 'SS', 'period': 60, 'count': 2},
+     '/v2/market-kline'),
     ('trend', {'symbol': '600519.SS'}, '/v1/trend'),
     ('kline', {'symbol': '600519.SS', 'period': 86400, 'count': 2}, '/v2/kline'),
     ('adjust_factors', {'symbol': '600519.SS'}, '/v1/adjust-factors'),

@@ -2,7 +2,7 @@
 
 本文分两部分：**通用说明**，以及**全接口参考**（每个接口列出用法与进阶用法）。
 
-快速开始见 [README.md](../README.md)；实现约定见 [DEVELOPMENT.md](DEVELOPMENT.md)。
+快速开始见 [README.md](../README.md)；维护者约定见 [DEVELOPMENT.md](DEVELOPMENT.md)（非终端用户文档）。
 
 ---
 
@@ -89,7 +89,7 @@ rows = pro.kline(symbol="600519.SS", period=86400, count=10, as_dataframe=False)
 envelope = pro.kline(symbol="600519.SS", period=86400, count=10, raw=True)
 ```
 
-`realtime_v2` / `auction_v2` 等紧凑格式接口默认展开为行；全市场写法见 §8。
+`realtime_v2` / `auction_v2` / `market_kline_v2` 等紧凑格式接口默认展开为行；全市场写法见 §8。
 
 ---
 
@@ -181,7 +181,7 @@ with pro.level2(symbol="600519.SS", channels="depth,trades,entrust") as feed:
 
 ---
 
-## 8. 全市场紧凑格式（realtime_v2 / auction_v2 等）
+## 8. 全市场紧凑格式（realtime_v2 / auction_v2 / market_kline_v2 等）
 
 下列接口支持一次拉取全市场紧凑快照：
 
@@ -189,6 +189,7 @@ with pro.level2(symbol="600519.SS", channels="depth,trades,entrust") as feed:
 |------|------|------|
 | `realtime_v2` | `/v2/realtime` | `all=True, market="SS"` |
 | `auction_v2` | `/v2/auction` | `all=True`，可加 `market` / `include_minutes` |
+| `market_kline_v2` | `/v2/market-kline` | 仅 `all=True`；可加 `market` / `period=60` / `count` |
 | `convertible_auction_v2` | `/v2/convertible/auction` | `all=True` |
 | `moneyflow_live` | `/v1/moneyflow/live` | `all=True` 或批量 `symbol` |
 
@@ -198,6 +199,7 @@ with pro.level2(symbol="600519.SS", channels="depth,trades,entrust") as feed:
 |------|------|
 | 个股实时 / 竞价分时 | `realtime` / `auction` |
 | 全市场快照 | `realtime_v2` / `auction_v2` |
+| 全市场近端分钟 K | `market_kline_v2` |
 
 `all=True` 时服务端返回紧凑格式；SDK 默认展开为行 / DataFrame。需要原始结构时传 `expand_compact_rows=False`。
 
@@ -210,6 +212,7 @@ df = pro.realtime_v2(
 )
 auc = pro.auction_v2(all=True, market="SS")
 auc_m = pro.auction_v2(all=True, include_minutes=True)
+mk = pro.market_kline_v2(all=True, market="SS", period=60, count=2)
 mf = pro.moneyflow_live(all=True)
 cb = pro.convertible_auction_v2(all=True)
 ```
@@ -221,7 +224,7 @@ pro.realtime_v2(symbol=["600519.SS", "000001.SZ"])
 pro.auction_v2(symbol="600519.SS")
 ```
 
-全市场包较大，对应独立 scope（如 `realtime_v2` / `auction_v2`），权限见 `pro.me()`。实时个股资金流全市场见 `moneyflow_live(all=True)`。
+全市场包较大，对应独立 scope（如 `realtime_v2` / `auction_v2` / `market_kline_v2`），权限见 `pro.me()`。实时个股资金流全市场见 `moneyflow_live(all=True)`。
 
 ---
 
@@ -269,7 +272,7 @@ ks.normalize_symbol("600519.SH")     # → 600519.SS
 
 通用 `**opts`：`raw` / `as_dataframe` / `expand_compact_rows` / `auth` / `skip_limits`。
 
-**统计：** 179 个接口；用法示例 191 段；进阶用法示例 514 段；数据样例 97 个。
+**统计：** 180 个接口；用法示例 192 段；进阶用法示例 517 段；数据样例 97 个。
 
 ## 元数据 / 公开文档
 
@@ -348,175 +351,8 @@ pro.me(as_dataframe=False)
 
 **数据样例**
 
-| 字段 | 值 |
-|------|-----|
-| `account` | *** |
-| `key` | *** |
-| `level2_channels` | ["depth", "orders", "trades"] |
-| `live_kline_bar_quota_note` | source=live 时按「标的数×count」合计，同一分钟内不可超过此根数 |
-| `max_abnormal_events_subscriptions` | 2 |
-| `max_futures_stream_subscriptions` | 0 |
-| `max_level2_slots` | 1280 |
-| `max_level2_subscriptions` | 5 |
-| `max_level2_symbols` | 1280 |
-| `max_live_kline_bars_per_minute` | 500000 |
-| `max_market_flash_subscriptions` | 2 |
-| `max_realtime_stream_subscriptions` | 0 |
-| `max_realtime_stream_symbols` | 0 |
-| `max_realtime_symbols` | 200 |
-| `max_symbols_per_minute` | 6000 |
-| `rate_limit_per_minute` | 3000 |
-| `success` | True |
-| `symbol_quota_note` | 实时/分时/分钟 K 线/ETF 同类接口共用，同一分钟内不同品种数上限 |
-
-**`endpoint_access_status` 展开（20 条）**
-
-| `access_mode` | `allowed` | `exhausted` | `group_id` | `group_label` | `id` | `label` | `max_uses` | `path` | `period_days` | `remaining` | `scope` |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| trial | True | False | live_compact | 全市场实时（compact） | realtime_v2_cn | A 股全市场 / 批量 | 30 | /v2/realtime | 1 | 26 | realtime_v2 |
-| trial | True | False | live_compact | 全市场实时（compact） | realtime_v2_us | 美股全市场 / 批量 | 30 | /v2/realtime | 1 | 30 | realtime_v2 |
-| trial | True | False | live_compact | 全市场实时（compact） | auction_v2 | 集合竞价全市场 / 批量 | 30 | /v2/auction | 1 | 26 | auction_v2 |
-| locked | False |  | live_compact | 全市场实时（compact） | moneyflow_em_v2 | 东财资金流全市场 / 批量 |  | /v2/moneyflow/em |  |  | moneyflow_em_v2 |
-| full | True |  | hs_quote | 沪深行情（实时） | realtime | 实时行情 |  | /v1/realtime |  |  | realtime |
-
-（共 20 行，表中展示前 5 行、前 12/16 列）
-
-**`kline` 展开**
-
-| 字段 | 值 |
-|------|-----|
-| `adjust_types` | ["forward", "backward", "none"] |
-| `allow_pagination` | True |
-| `allowed_indicators` | ["ma", "ema", "rsi", "macd", "boll"] |
-| `allowed_indicators_label` | 简单移动平均线 MA、指数移动平均线 EMA、相对强弱指标 RSI、MACD、布林带 BOLL |
-| `max_count` | 2000 |
-| `max_indicator_specs` | 8 |
-| `max_minute_count` | 240 |
-| `periods_label` | 1分钟、5分钟、15分钟、30分钟、60分钟、日线、周线、月线 |
-| `plan` | 免费版 |
-
-**`market_flash_trial` 展开**
-
-| 字段 | 值 |
-|------|-----|
-| `daily_limit` | 1 |
-| `max_uses` | 1 |
-| `mode` | trial |
-| `period_days` | 1 |
-
-**`endpoints` 展开（1 条）**
-
-| `exhausted` | `id` | `label` | `max_uses` | `path` | `period_days` | `remaining` | `used_today` |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| False | market_flash_stream | 快讯实时订阅 | 1 | /v1/market-flash/stream | 1 | 1 | 0 |
-
-**`rate_limit` 展开**
-
-| 字段 | 值 |
-|------|-----|
-| `requests` | 3000 |
-| `requests_per_minute` | 3000 |
-| `window_minutes` | 1 |
-
-**`realtime_feature_gates` 展开（2 条）**
-
-| `description` | `label` | `param` | `routes` |
-| --- | --- | --- | --- |
-| PE/PB/市值、昨收、换手率、振幅、量比等 | 实时估值扩展 | include_valuation | {"etf_realtime": {"scope": "etf_realtime_valuat… |
-| bid/ask 五档及内外盘成交量 | 买卖五档 | include_depth | {"etf_realtime": {"scope": "etf_realtime_depth"… |
-
-**`scopes` 展开（20 条）**
-
-| `allowed` | `name` | `rate_limit` | `rate_limit_per_minute` | `scope` |
-| --- | --- | --- | --- | --- |
-| True | 站内板块K线 | {"requests": 400, "requests_per_minute": 400, "… | 400 | plate_kline |
-| True | 市场快讯 | {"requests": 10, "requests_per_minute": 10, "wi… | 10 | market_flash |
-| True | 实时五档行情 | {"requests": 100, "requests_per_minute": 100, "… | 100 | realtime_depth |
-| True | 上市公司资料 | {"requests": 600, "requests_per_minute": 600, "… | 600 | corp |
-| True | ETF实时估值 | {"requests": 100, "requests_per_minute": 100, "… | 100 | etf_realtime_valuation |
-
-（共 20 行，表中展示前 5 行）
-
-**`subscription_summary` 展开**
-
-| 字段 | 值 |
-|------|-----|
-| `effective_plan` | 旗舰版 |
-| `effective_role_id` | premium_v2 |
-| `main_expires_at` | 2026-10-21T00:30:23 |
-| `main_plan` | 旗舰版 |
-| `main_role_id` | premium_v2 |
-| `subscription_active` | True |
-| `symbol_quota_base` | 6000 |
-| `symbol_quota_stacks` | 1 |
-| `symbol_quota_total` | 6000 |
-
-**字段说明**
-
-| 字段 | 含义 | 样例值 |
-|------|------|--------|
-| `account` | 账号信息（文档已脱敏） | *** |
-| `endpoint_access_status` | 接口权限状态 | [20 项，见下方展开] |
-| `key` | 密钥信息（文档已脱敏） | *** |
-| `kline` | K 线能力说明 | {9 字段，见下方展开} |
-| `level2_channels` | Level2 频道 | ["depth", "orders", "trades"] |
-| `live_kline_bar_quota_note` | 实时 K 线额度说明 | source=live 时按「标的数×count」合计，同一分钟内不可超过此根数 |
-| `market_flash_trial` | 市场快讯试用额度 | {5 字段，见下方展开} |
-| `max_abnormal_events_subscriptions` | 异动事件最大订阅数 | 2 |
-| `max_futures_stream_subscriptions` | 期货推流最大订阅数 | 0 |
-| `max_level2_slots` | Level2 最大槽位 | 1280 |
-| `max_level2_subscriptions` | Level2 最大订阅数 | 5 |
-| `max_level2_symbols` | Level2 最大标的数 | 1280 |
-| `max_live_kline_bars_per_minute` | 每分钟实时 K 线条数上限 | 500000 |
-| `max_market_flash_subscriptions` | 市场快讯最大订阅数 | 2 |
-| `max_realtime_stream_subscriptions` | 实时推流最大订阅数 | 0 |
-| `max_realtime_stream_symbols` | 实时推流最大标的数 | 0 |
-| `max_realtime_symbols` | 实时行情最大标的数 | 200 |
-| `max_symbols_per_minute` | 每分钟最大标的数 | 6000 |
-| `rate_limit` | 限速配置 | {3 字段，见下方展开} |
-| `rate_limit_per_minute` | 每分钟请求上限 | 3000 |
-| `realtime_feature_gates` | 实时附加字段门控 | [2 项，见下方展开] |
-| `scopes` | 权限范围 | [20 项，见下方展开] |
-| `subscription_summary` | 订阅摘要 | {9 字段，见下方展开} |
-| `success` | 是否成功 | True |
-| `symbol_quota_note` | 标的配额说明 | 实时/分时/分钟 K 线/ETF 同类接口共用，同一分钟内不同品种数上限 |
-| `endpoint_access_status.access_mode` | 接口权限状态 → 访问模式（trial/locked/open） | trial |
-| `endpoint_access_status.allowed` | 接口权限状态 → 是否允许 | True |
-| `endpoint_access_status.exhausted` | 接口权限状态 → 是否用尽 | False |
-| `endpoint_access_status.group_id` | 接口权限状态 → 分组编号 | live_compact |
-| `endpoint_access_status.group_label` | 接口权限状态 → 分组名称 | 全市场实时（compact） |
-| `endpoint_access_status.id` | 接口权限状态 → 编号 | realtime_v2_cn |
-| `endpoint_access_status.label` | 接口权限状态 → 标签 | A 股全市场 / 批量 |
-| `endpoint_access_status.max_uses` | 接口权限状态 → 最大次数 | 30 |
-| `endpoint_access_status.path` | 接口权限状态 → 路径 | /v2/realtime |
-| `endpoint_access_status.period_days` | 接口权限状态 → 周期天数 | 1 |
-| `endpoint_access_status.remaining` | 接口权限状态 → 剩余次数 | 26 |
-| `endpoint_access_status.scope` | 接口权限状态 → 范围 | realtime_v2 |
-| `endpoint_access_status.used_in_window` | 接口权限状态 → 窗口内已用 | 4 |
-| `endpoint_access_status.expires_at` | 接口权限状态 → expires（时间） |  |
-| `endpoint_access_status.rate_limit` | 接口权限状态 → 限速配置 |  |
-| `endpoint_access_status.rate_limit_label` | 接口权限状态 → rate_limit（说明） |  |
-| `kline.adjust_types` | K 线能力说明 → 可用复权类型 | ["forward", "backward", "none"] |
-| `kline.allow_pagination` | K 线能力说明 → 是否支持分页 | True |
-| `kline.allowed_indicators` | K 线能力说明 → 允许的附加指标 | ["ma", "ema", "rsi", "macd", "boll"] |
-| `kline.allowed_indicators_label` | K 线能力说明 → 附加指标说明 | 简单移动平均线 MA、指数移动平均线 EMA、相对强弱指标 RSI、MACD、布林带 BOLL |
-| `kline.max_count` | K 线能力说明 → 最大条数 | 2000 |
-| `kline.max_indicator_specs` | K 线能力说明 → 最大指标规格数 | 8 |
-| `kline.max_minute_count` | K 线能力说明 → 分钟线最大条数 | 240 |
-| `kline.periods_label` | K 线能力说明 → 周期说明 | 1分钟、5分钟、15分钟、30分钟、60分钟、日线、周线、月线 |
-| `kline.plan` | K 线能力说明 → 套餐 | 免费版 |
-| `market_flash_trial.daily_limit` | 市场快讯试用额度 → 日限额 | 1 |
-| `market_flash_trial.endpoints` | 市场快讯试用额度 → 接口列表 | [1 项，见下方展开] |
-| `market_flash_trial.max_uses` | 市场快讯试用额度 → 最大次数 | 1 |
-| `market_flash_trial.mode` | 市场快讯试用额度 → 模式 | trial |
-| `market_flash_trial.period_days` | 市场快讯试用额度 → 周期天数 | 1 |
-| `market_flash_trial.endpoints.exhausted` | 市场快讯试用额度 → 字段 `endpoints.exhausted` |  |
-| `market_flash_trial.endpoints.id` | 市场快讯试用额度 → 字段 `endpoints.id` |  |
-| `market_flash_trial.endpoints.label` | 市场快讯试用额度 → 字段 `endpoints.label` |  |
-| `market_flash_trial.endpoints.max_uses` | 市场快讯试用额度 → 字段 `endpoints.max_uses` |  |
-| `market_flash_trial.endpoints.path` | 市场快讯试用额度 → 字段 `endpoints.path` |  |
-
-（共 84 个字段，表中展示前 60 个）
+文档不固化完整 `/v1/me` 快照（含套餐价、角色 ID、配额叠加等）。
+请用 `pro.me()` / `pro.limits.summary()` 查看当前 Key 的权限与限额。
 
 ### `public_catalog`
 
@@ -549,192 +385,8 @@ pro.public_catalog(as_dataframe=False)
 
 **数据样例**
 
-| 字段 | 值 |
-|------|-----|
-| `success` | True |
-| `tier_compare_note` | v2 套餐：实时接口每分钟次数与 v1 同级；另设全局每分钟不同品种数上限（实时/分时/分钟 … |
-
-**`api_surface` 展开（20 条）**
-
-| `id` | `items` | `label` |
-| --- | --- | --- |
-| live_compact | [4 项，见下方展开] | 全市场实时（compact） |
-| hs_quote | [6 项，见下方展开] | 沪深行情（实时） |
-| bj_quote | [2 项，见下方展开] | 北交所行情（历史） |
-| hsbj | [2 项，见下方展开] | 沪深京 |
-| level2 | [1 项，见下方展开] | Level2 |
-
-（共 20 行，表中展示前 5 行）
-
-**`market_indices` 展开（10 条）**
-
-| `group` | `is_primary` | `name` | `quote_ready` | `symbol` | `futures` |
-| --- | --- | --- | --- | --- | --- |
-| 宽基 | True | 深证成指 | True | 399001.SZ |  |
-| 宽基 | True | 创业板指 | True | 399006.SZ |  |
-| 宽基 | False | 沪深300 | True | 000300.SS | IF |
-| 宽基 | False | 上证50 | True | 000016.SS | IH |
-| 宽基 | False | 中证500 | True | 000905.SS | IC |
-
-（共 10 行，表中展示前 5 行）
-
-**`realtime_batch_limits` 展开（3 条）**
-
-| `max_symbols` | `tier_id` | `tier_name` |
-| --- | --- | --- |
-| 80 | basic_v2 | 基础版 |
-| 160 | pro_v2 | 专业版 |
-| 200 | premium_v2 | 旗舰版 |
-
-**`realtime_feature_gates` 展开（2 条）**
-
-| `description` | `label` | `param` | `routes` |
-| --- | --- | --- | --- |
-| PE/PB/市值、昨收、换手率、振幅、量比等 | 实时估值扩展 | include_valuation | {"etf_realtime": {"scope": "etf_realtime_valuat… |
-| bid/ask 五档及内外盘成交量 | 买卖五档 | include_depth | {"etf_realtime": {"scope": "etf_realtime_depth"… |
-
-**`register_roles` 展开（4 条）**
-
-| `id` | `name` | `tier_version` |
-| --- | --- | --- |
-| basic_v2 | 基础版 | 2 |
-| pro_v2 | 专业版 | 2 |
-| premium_v2 | 旗舰版 | 2 |
-| cn_fut | 国内期货 | 1 |
-
-**`scope_rows` 展开（20 条）**
-
-| `availability` | `id` | `name` | `path` | `required_plan` | `scope` | `tier_names` | `tier_names_trial` |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| [4 项，见下方展开] | realtime | 实时行情 | /v1/realtime | 基础版 | realtime | ["基础版", "专业版", "旗舰版"] | [] |
-| [4 项，见下方展开] | kline_v2 | K 线 v2 | /v2/kline | 基础版 | kline | ["基础版", "专业版", "旗舰版"] | [] |
-| [4 项，见下方展开] | kline | K 线（过时） | /v1/kline | 基础版 | kline | ["基础版", "专业版", "旗舰版"] | [] |
-| [4 项，见下方展开] | bj_kline | K 线 | /v1/bj/kline | 基础版 | kline | ["基础版", "专业版", "旗舰版"] | [] |
-| [4 项，见下方展开] | adjust_factors | 复权因子 | /v1/adjust-factors | 基础版 | kline | ["基础版", "专业版", "旗舰版"] | [] |
-
-（共 20 行，表中展示前 5 行）
-
-**`symbol_quota_limits` 展开（3 条）**
-
-| `max_symbols_per_minute` | `tier_id` | `tier_name` | `tier_version` |
-| --- | --- | --- | --- |
-| 1500 | basic_v2 | 基础版 | 2 |
-| 2500 | pro_v2 | 专业版 | 2 |
-| 6000 | premium_v2 | 旗舰版 | 2 |
-
-**`tier_columns` 展开（4 条）**
-
-| `id` | `name` | `tier_version` |
-| --- | --- | --- |
-| basic_v2 | 基础版 | 2 |
-| pro_v2 | 专业版 | 2 |
-| premium_v2 | 旗舰版 | 2 |
-| cn_fut | 国内期货 | 1 |
-
-**`tier_poster` 展开**
-
-| 字段 | 值 |
-|------|-----|
-| `visible_keys` | ["periods", "max_count", "adjust", "indicators"… |
-
-**`items` 展开（20 条）**
-
-| `key` | `kind` | `label` | `endpoint_id` | `group` | `path` | `scope` |
-| --- | --- | --- | --- | --- | --- | --- |
-| *** | limit | K 线周期 |  |  |  |  |
-| *** | limit | 单次条数 |  |  |  |  |
-| *** | limit | 复权 |  |  |  |  |
-| *** | limit | 技术指标 |  |  |  |  |
-| *** | limit | 实时批量 |  |  |  |  |
-
-（共 20 行，表中展示前 5 行）
-
-**`tiers` 展开（4 条）**
-
-| `cells` | `id` | `name` | `tier_rank` |
-| --- | --- | --- | --- |
-| [20 项，见下方展开] | basic_v2 | 基础版 | 1 |
-| [20 项，见下方展开] | pro_v2 | 专业版 | 2 |
-| [20 项，见下方展开] | premium_v2 | 旗舰版 | 3 |
-| [20 项，见下方展开] | cn_fut | 国内期货 | 99 |
-
-**`tiers` 展开（4 条）**
-
-| `adjust_types` | `allowed_indicators_label` | `description` | `discount_label` | `discount_percent` | `id` | `max_count` | `max_realtime_symbols` | `max_symbols_per_minute` | `name` | `original_price` | `original_price_display` |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| ["forward", "backward", "none"] | 简单移动平均线 MA、指数移动平均线 EMA、相对强弱指标 RSI、MACD、布林带 BOLL | 基础版：全周期实时K线，可试用部分旗舰版功能 | 限时特惠 | 50 | basic_v2 | 1000 | 80 | 1500 | 基础版 | 199 | ¥199 |
-| ["forward", "backward", "none"] | 简单移动平均线 MA、指数移动平均线 EMA、相对强弱指标 RSI、MACD、布林带 BOLL | 专业版：全周期实时K线， ETF 专用接口；打板/异动/快讯各接口日试用 2 次； | 限时特惠 | 33 | pro_v2 | 1500 | 160 | 2500 | 专业版 | 299 | ¥299 |
-| ["forward", "backward", "none"] | 简单移动平均线 MA、指数移动平均线 EMA、相对强弱指标 RSI、MACD、布林带 BOLL | 旗舰版：全能力顶格；全局每分钟最多查询 3000 个不同品种（可叠加扩容） | 限时特惠 | 43 | premium_v2 | 2000 | 200 | 6000 | 旗舰版 | 699 | ¥699 |
-| ["forward", "backward", "none"] | 简单移动平均线 MA、指数移动平均线 EMA、相对强弱指标 RSI、MACD、布林带 BOLL | 国内期货行情数据接口，支持tick级数据推送 | 限时特惠 | 60 | cn_fut | 500 |  |  | 国内期货 | 999 | ¥999 |
-
-（共 4 行、前 12/22 列）
-
-**字段说明**
-
-| 字段 | 含义 | 样例值 |
-|------|------|--------|
-| `api_surface` | API 能力面 | [20 项，见下方展开] |
-| `market_indices` | 市场指数清单 | [10 项，见下方展开] |
-| `realtime_batch_limits` | 实时批量上限 | [3 项，见下方展开] |
-| `realtime_feature_gates` | 实时附加字段门控 | [2 项，见下方展开] |
-| `register_roles` | 可注册角色 | [4 项，见下方展开] |
-| `scope_rows` | 权限明细行 | [20 项，见下方展开] |
-| `success` | 是否成功 | True |
-| `symbol_quota_limits` | 标的配额明细 | [3 项，见下方展开] |
-| `tier_columns` | 套餐对比列 | [4 项，见下方展开] |
-| `tier_compare_note` | 套餐对比说明 | v2 套餐：实时接口每分钟次数与 v1 同级；另设全局每分钟不同品种数上限（实时/分时/分钟 … |
-| `tier_poster` | 档位海报 | {3 字段，见下方展开} |
-| `tiers` | 套餐档位 | [4 项，见下方展开] |
-| `api_surface.id` | API 能力面 → 编号 | live_compact |
-| `api_surface.items` | API 能力面 → 条目列表 | [4 项，见下方展开] |
-| `api_surface.label` | API 能力面 → 标签 | 全市场实时（compact） |
-| `market_indices.group` | 市场指数清单 → 分组 | 宽基 |
-| `market_indices.is_primary` | 市场指数清单 → 是否主条目 | True |
-| `market_indices.name` | 市场指数清单 → 名称 | 深证成指 |
-| `market_indices.quote_ready` | 市场指数清单 → 行情是否就绪 | True |
-| `market_indices.symbol` | 市场指数清单 → 标的代码 | 399001.SZ |
-| `market_indices.futures` | 市场指数清单 → 期货 |  |
-| `realtime_batch_limits.max_symbols` | 实时批量上限 → 最大标的数 | 80 |
-| `realtime_batch_limits.tier_id` | 实时批量上限 → 套餐档位 ID | basic_v2 |
-| `realtime_batch_limits.tier_name` | 实时批量上限 → 套餐档位名 | 基础版 |
-| `realtime_feature_gates.description` | 实时附加字段门控 → 描述 | PE/PB/市值、昨收、换手率、振幅、量比等 |
-| `realtime_feature_gates.label` | 实时附加字段门控 → 标签 | 实时估值扩展 |
-| `realtime_feature_gates.param` | 实时附加字段门控 → 参数 | include_valuation |
-| `realtime_feature_gates.routes` | 实时附加字段门控 → 路由 | {"etf_realtime": {"scope": "etf_realtime_valuat… |
-| `register_roles.id` | 可注册角色 → 编号 | basic_v2 |
-| `register_roles.name` | 可注册角色 → 名称 | 基础版 |
-| `register_roles.tier_version` | 可注册角色 → 档位版本 | 2 |
-| `scope_rows.availability` | 权限明细行 → 可用性 | [4 项，见下方展开] |
-| `scope_rows.id` | 权限明细行 → 编号 | realtime |
-| `scope_rows.name` | 权限明细行 → 名称 | 实时行情 |
-| `scope_rows.path` | 权限明细行 → 路径 | /v1/realtime |
-| `scope_rows.required_plan` | 权限明细行 → 所需套餐 | 基础版 |
-| `scope_rows.scope` | 权限明细行 → 范围 | realtime |
-| `scope_rows.tier_names` | 权限明细行 → 档位名称列表 | ["基础版", "专业版", "旗舰版"] |
-| `scope_rows.tier_names_trial` | 权限明细行 → 试用档位名 | [] |
-| `symbol_quota_limits.max_symbols_per_minute` | 标的配额明细 → 每分钟最大标的数 | 1500 |
-| `symbol_quota_limits.tier_id` | 标的配额明细 → 套餐档位 ID | basic_v2 |
-| `symbol_quota_limits.tier_name` | 标的配额明细 → 套餐档位名 | 基础版 |
-| `symbol_quota_limits.tier_version` | 标的配额明细 → 档位版本 | 2 |
-| `tier_columns.id` | 套餐对比列 → 编号 | basic_v2 |
-| `tier_columns.name` | 套餐对比列 → 名称 | 基础版 |
-| `tier_columns.tier_version` | 套餐对比列 → 档位版本 | 2 |
-| `tier_poster.items` | 档位海报 → 条目列表 | [20 项，见下方展开] |
-| `tier_poster.tiers` | 档位海报 → 套餐档位 | [4 项，见下方展开] |
-| `tier_poster.visible_keys` | 档位海报 → 可见字段 | ["periods", "max_count", "adjust", "indicators"… |
-| `tier_poster.items.key` | 档位海报 → 字段 `items.key` |  |
-| `tier_poster.items.kind` | 档位海报 → 字段 `items.kind` |  |
-| `tier_poster.items.label` | 档位海报 → 字段 `items.label` |  |
-| `tier_poster.items.endpoint_id` | 档位海报 → items.endpoint（编号） |  |
-| `tier_poster.items.group` | 档位海报 → 字段 `items.group` |  |
-| `tier_poster.items.path` | 档位海报 → 字段 `items.path` |  |
-| `tier_poster.items.scope` | 档位海报 → 字段 `items.scope` |  |
-| `tier_poster.tiers.cells` | 档位海报 → 字段 `tiers.cells` |  |
-| `tier_poster.tiers.id` | 档位海报 → 字段 `tiers.id` |  |
-| `tier_poster.tiers.name` | 档位海报 → 字段 `tiers.name` |  |
-| `tier_poster.tiers.tier_rank` | 档位海报 → 字段 `tiers.tier_rank` |  |
-
-（共 82 个字段，表中展示前 60 个）
+文档不固化完整 `/public/v1/catalog` 价目与档位表。
+请用 `pro.public_catalog()` 或站点文档查看最新档位与 scope 矩阵。
 
 ### `public_indices`
 
@@ -2015,6 +1667,46 @@ pro.auction_v2(all=True, market='SS', trade_date='20250102')
 
 ```python
 pro.auction_v2(all=True, market='SS', expand_compact_rows=False)
+```
+
+**数据样例**
+
+暂无可用样例：无样例
+
+### `market_kline_v2`
+
+- **路径：** `/v2/market-kline`
+- **类型：** http
+- **说明：** 全市场近端分钟 K compact（仅 all=True；独立 scope）
+- **签名：** `pro.market_kline_v2(*, all=True, market=None, period=None, count=None, **opts)`
+- **介绍：** 全市场近端分钟 K compact `GET /v2/market-kline`（独立 scope `market_kline_v2`）。
+
+**用法**
+
+- 全市场（推荐）
+
+```python
+pro.market_kline_v2(all=True, market='SS', period=60, count=2)
+```
+
+**进阶用法**
+
+- 沪深京（CN）
+
+```python
+pro.market_kline_v2(all=True, market='CN', count=2)
+```
+
+- 返回完整 JSON 信封（`raw=True`）
+
+```python
+pro.market_kline_v2(all=True, market='SS', period=60, count=2, raw=True)
+```
+
+- 返回 list / dict，不转 DataFrame
+
+```python
+pro.market_kline_v2(all=True, market='SS', period=60, count=2, as_dataframe=False)
 ```
 
 **数据样例**
@@ -10330,9 +10022,8 @@ pro.refresh_limits(as_dataframe=False)
 
 **数据样例**
 
-```text
-LimitsSnapshot(raw={'account': {'discount_label': '限时特惠', 'discount_percent': 43, 'enabled': True, 'expires_at': '2026-10-21T00:30:23', 'name': 'l2-local', 'original_price': 699.0, 'original_price_dis
-```
+文档不固化完整 `/v1/me` 快照（含套餐价、角色 ID、配额叠加等）。
+请用 `pro.me()` / `pro.refresh_limits()` / `pro.limits.summary()` 查看当前 Key 的权限与限额。
 
 ### `get_escape`
 

@@ -41,6 +41,29 @@ def test_expand_nested_minutes() -> None:
     assert rows[0]['minutes'][1]['price'] == 101
 
 
+def test_expand_nested_bars() -> None:
+    payload = {
+        'format': 'compact',
+        'fields': ['symbol', 'bars_n', 'bars'],
+        'sep': '|',
+        'bars_fields': ['timestamp', 'open', 'high', 'low', 'close', 'volume', 'amount'],
+        'bars_sep': ',',
+        'bars_row_sep': ';',
+        'data': [
+            '600519.SS|2|1760842440000,1338,1339,1337,1338.5,12000,16000000'
+            ';1760842500000,1338.5,1340,1338,1339,8000,1.07e7'
+        ],
+    }
+    rows = expand_compact(payload)
+    assert rows[0]['symbol'] == '600519.SS'
+    assert rows[0]['bars_n'] == 2
+    assert len(rows[0]['bars']) == 2
+    assert rows[0]['bars'][0]['timestamp'] == 1760842440000
+    assert rows[0]['bars'][0]['close'] == 1338.5
+    assert rows[0]['bars'][1]['volume'] == 8000
+    assert rows[0]['bars'][1]['amount'] == 10700000.0
+
+
 def test_is_compact_payload() -> None:
     assert is_compact_payload({'format': 'compact', 'fields': [], 'data': []})
     assert is_compact_payload({'data': {'format': 'compact', 'fields': [], 'sep': '|', 'data': []}})

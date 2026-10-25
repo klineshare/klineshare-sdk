@@ -42,15 +42,15 @@ def is_forbidden(resp_status: int, body: Any) -> bool:
 
 
 def is_wrong_entry_hint(body: Any, *, hinted_base: Optional[str], current_base: str) -> bool:
-    """True when server signals the client is on the wrong home-node entry.
+    """True when the API asks the client to switch to the assigned ``api_base``.
 
-    Upstream shape (``check_account_home_node``)::
+    Typical HTTP body::
 
         {"success": false, "code": 403,
          "message": "当前入口不可用，请改用分配地址请求：https://...",
          "api_base": "https://..."}
 
-    WS embeds ``api_base=`` inside ``message``. Scope-denied 403s omit ``api_base``.
+    WS may embed ``api_base=`` inside ``message``. Scope-denied 403s omit ``api_base``.
     """
     if not hinted_base:
         return False

@@ -20,7 +20,7 @@ def _rule_from_public(entry: Any) -> Optional[Tuple[int, int]]:
     """
     Convert me ``rate_limit`` / scope ``rate_limit`` to ``(requests, window_seconds)``.
 
-    Public shape (from server ``public_rate_limit``)::
+    Public ``/v1/me`` rate_limit shape::
 
         {"requests": 300, "window_minutes": 1, "requests_per_minute": 300}
     """

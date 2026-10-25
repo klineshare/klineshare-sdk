@@ -29,6 +29,7 @@ sys.path.insert(0, str(ROOT / 'scripts'))
 from api_doc_samples import (  # noqa: E402
     LiveSample,
     build_client,
+    doc_sample_stub,
     fetch_samples,
     load_cache,
     _fields_of,
@@ -352,7 +353,7 @@ def _synth_advanced(
 
     # expand_compact_rows for known compact endpoints
     if entry.name in (
-        'realtime_v2', 'auction_v2', 'convertible_auction_v2',
+        'realtime_v2', 'auction_v2', 'market_kline_v2', 'convertible_auction_v2',
     ) and 'expand_compact_rows' not in present_keys:
         add(
             '保留紧凑格式原始结构（`expand_compact_rows=False`）',
@@ -436,7 +437,7 @@ def _guide_section() -> List[str]:
         '',
         '本文分两部分：**通用说明**，以及**全接口参考**（每个接口列出用法与进阶用法）。',
         '',
-        '快速开始见 [README.md](../README.md)；实现约定见 [DEVELOPMENT.md](DEVELOPMENT.md)。',
+        '快速开始见 [README.md](../README.md)；维护者约定见 [DEVELOPMENT.md](DEVELOPMENT.md)（非终端用户文档）。',
         '',
         '---',
         '',
@@ -525,7 +526,7 @@ def _guide_section() -> List[str]:
         'envelope = pro.kline(symbol="600519.SS", period=86400, count=10, raw=True)',
         '```',
         '',
-        '`realtime_v2` / `auction_v2` 等紧凑格式接口默认展开为行；'
+        '`realtime_v2` / `auction_v2` / `market_kline_v2` 等紧凑格式接口默认展开为行；'
         '全市场写法见 §8。',
         '',
         '---',
@@ -622,7 +623,7 @@ def _guide_section() -> List[str]:
         '',
         '---',
         '',
-        '## 8. 全市场紧凑格式（realtime_v2 / auction_v2 等）',
+        '## 8. 全市场紧凑格式（realtime_v2 / auction_v2 / market_kline_v2 等）',
         '',
         '下列接口支持一次拉取全市场紧凑快照：',
         '',
@@ -630,6 +631,7 @@ def _guide_section() -> List[str]:
         '|------|------|------|',
         '| `realtime_v2` | `/v2/realtime` | `all=True, market="SS"` |',
         '| `auction_v2` | `/v2/auction` | `all=True`，可加 `market` / `include_minutes` |',
+        '| `market_kline_v2` | `/v2/market-kline` | 仅 `all=True`；可加 `market` / `period=60` / `count` |',
         '| `convertible_auction_v2` | `/v2/convertible/auction` | `all=True` |',
         '| `moneyflow_live` | `/v1/moneyflow/live` | `all=True` 或批量 `symbol` |',
         '',
@@ -639,6 +641,7 @@ def _guide_section() -> List[str]:
         '|------|------|',
         '| 个股实时 / 竞价分时 | `realtime` / `auction` |',
         '| 全市场快照 | `realtime_v2` / `auction_v2` |',
+        '| 全市场近端分钟 K | `market_kline_v2` |',
         '',
         '`all=True` 时服务端返回紧凑格式；SDK 默认展开为行 / DataFrame。'
         '需要原始结构时传 `expand_compact_rows=False`。',
@@ -652,6 +655,7 @@ def _guide_section() -> List[str]:
         ')',
         'auc = pro.auction_v2(all=True, market="SS")',
         'auc_m = pro.auction_v2(all=True, include_minutes=True)',
+        'mk = pro.market_kline_v2(all=True, market="SS", period=60, count=2)',
         'mf = pro.moneyflow_live(all=True)',
         'cb = pro.convertible_auction_v2(all=True)',
         '```',
@@ -663,7 +667,7 @@ def _guide_section() -> List[str]:
         'pro.auction_v2(symbol="600519.SS")',
         '```',
         '',
-        '全市场包较大，对应独立 scope（如 `realtime_v2` / `auction_v2`），'
+        '全市场包较大，对应独立 scope（如 `realtime_v2` / `auction_v2` / `market_kline_v2`），'
         '权限见 `pro.me()`。实时个股资金流全市场见 `moneyflow_live(all=True)`。',
         '',
         '---',
@@ -717,6 +721,16 @@ def _guide_section() -> List[str]:
 
 
 def _render_sample(e: ApiEntry, live: Optional[LiveSample]) -> List[str]:
+    stub = doc_sample_stub(e.name)
+    if stub:
+        lines = [
+            '**数据样例**',
+            '',
+            stub,
+            '',
+        ]
+        return lines
+
     if live is None or not live.ok or live.data is None:
         detail = (live.detail if live else '无样例')
         lines = [

@@ -5,7 +5,7 @@
 ## 发布前
 
 - [x] `CHANGELOG.md` 已写清本版本变更，并将 `[Unreleased]` 条目移入版本节
-- [x] `pyproject.toml` / `src/klineshare/__init__.py` 的 `__version__` 一致（`0.2.6`）
+- [x] `pyproject.toml` / `src/klineshare/__init__.py` 的 `__version__` 一致（`0.2.7`）
 - [x] 本地：`pip install -e ".[dev]" && pytest -q` 全绿（595 passed）
 - [ ] CI（GitHub Actions）在目标 commit 上绿
 - [x] `python scripts/check_endpoint_coverage.py` 已跑过（排除东财路径后 100%）

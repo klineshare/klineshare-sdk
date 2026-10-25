@@ -61,7 +61,7 @@ pro = ks.Client(api_key="tg_xxx", base_url="https://data.klineshare.cn")
 pro = ks.pro_api(limits="enforce", on_rate_limit="wait", kline_batch="auto")
 pro.refresh_limits()
 print(pro.limits.summary())  # max_count / RPM / max_realtime_symbols …
-# 日线多标的且 n×count 过大时自动按标的拆请求（默认阈值 3000）
+# 日线多标的且 n×count 过大时，客户端可按标的拆请求（默认阈值 3000，可调）
 bars = pro.kline(symbol=["600519.SS", "000001.SZ", "000002.SZ"], period=86400, count=1500, batch="auto")
 ```
 
@@ -94,13 +94,14 @@ SDK 会自动规范化常见写法：
 - 资料：`stock` / `stocks` / `corp` / `finance_report` / `calendar` / `suspend*` / `zfpg*` / `yjfp*`
 - 专题：`limit_up*` / `abnormal_events*` / `market_flash_stream` / `lhb_*` / `hot_money*` / `moneyflow_*`
 - 目录：`catalog_*`
-- 全市场 compact（**主用法 `all=True`**，不是单票）：`realtime_v2` / `auction_v2` / `convertible_auction_v2`
+- 全市场 compact（**主用法 `all=True`**，不是单票）：`realtime_v2` / `auction_v2` / `market_kline_v2` / `convertible_auction_v2`
 - 实时个股资金流：`moneyflow_live(all=True)` 或批量 `symbol`（最多 200 只）
 
 ```python
-# 沪市全市场实时 / 集合竞价 / 实时个股资金流
+# 沪市全市场实时 / 集合竞价 / 近端分钟 K / 实时个股资金流
 quotes = pro.realtime_v2(all=True, market="SS")
 auction = pro.auction_v2(all=True, market="SS")
+mk = pro.market_kline_v2(all=True, market="SS", period=60, count=2)
 moneyflow = pro.moneyflow_live(all=True)
 ```
 - 公开元数据：`public_catalog` / `public_indices` / `public_metals` / `public_futures` / `public_futures_v2` / `public_global_indices` / `public_global_bonds` / `public_usstocks` / `*_schema` / `docs_md` / `llms_txt` / `llms_full_txt`
@@ -169,7 +170,7 @@ for page in pro.iter_kline(symbol="600519.SS", period=86400, count=10, max_pages
 
 ## 开发
 
-实现约定与限流/限量设计见 **[docs/DEVELOPMENT.md](docs/DEVELOPMENT.md)**；发布步骤见 **[docs/RELEASE.md](docs/RELEASE.md)**；变更见 **[CHANGELOG.md](CHANGELOG.md)**。
+维护者约定见 **[docs/DEVELOPMENT.md](docs/DEVELOPMENT.md)**（非终端用户文档）；发布步骤见 **[docs/RELEASE.md](docs/RELEASE.md)**；变更见 **[CHANGELOG.md](CHANGELOG.md)**。
 
 ```bash
 pip install -e ".[dev]"

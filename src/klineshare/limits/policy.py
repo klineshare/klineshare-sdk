@@ -5,12 +5,13 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Dict, Optional, Tuple
 
-# Aligned with klineshare external_api.constants.SCOPE_API_PATHS + common aliases.
+# path → scope for client preflight (aliases included). Authoritative scopes come from /v1/me.
 _PATH_SCOPE: Dict[str, str] = {
     '/v1/realtime': 'realtime',
     '/v2/realtime': 'realtime_v2',
     '/v1/auction': 'auction',
     '/v2/auction': 'auction_v2',
+    '/v2/market-kline': 'market_kline_v2',
     '/v1/trend': 'trend',
     '/v2/kline': 'kline',
     '/v1/adjust-factors': 'kline',
@@ -183,6 +184,9 @@ def resolve_path_policy(path: str) -> PathPolicy:
 
     if norm.startswith('/v1/') and norm.rstrip('/').endswith('/realtime'):
         return PathPolicy(path=norm, scope=scope, kind='realtime_batch')
+    # Full-market minute K compact — independent scope; not symbol-batch kline quotas.
+    if root == '/v2/market-kline' or norm == '/v2/market-kline':
+        return PathPolicy(path=norm, scope=scope, kind='other')
     if '/kline' in norm:
         return PathPolicy(path=norm, scope=scope, kind='kline')
     if norm.endswith('/trend'):

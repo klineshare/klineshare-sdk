@@ -231,6 +231,33 @@ def test_realtime_multi_symbol_and_v2_all() -> None:
     assert params.get('market') == 'SS'
 
 
+def test_market_kline_v2_all_params() -> None:
+    session = MagicMock()
+    session.headers = {}
+    session.get.return_value = _FakeResp({
+        'success': True,
+        'format': 'compact',
+        'fields': ['symbol', 'bars_n', 'bars'],
+        'sep': '|',
+        'bars_fields': ['timestamp', 'open', 'high', 'low', 'close', 'volume', 'amount'],
+        'bars_sep': ',',
+        'bars_row_sep': ';',
+        'data': ['600519.SS|1|1760842440000,1338,1339,1337,1338.5,12000,16000000'],
+    })
+    pro = _client(session)
+    rows = pro.market_kline_v2(all=True, market='SS', period=60, count=2)
+    assert session.get.call_args.args[0].endswith('/v2/market-kline')
+    params = session.get.call_args.kwargs['params']
+    assert params.get('all') == 1
+    assert params.get('market') == 'SS'
+    assert params.get('period') == 60
+    assert params.get('count') == 2
+    assert rows[0]['symbol'] == '600519.SS'
+    assert rows[0]['bars'][0]['close'] == 1338.5
+    with pytest.raises(ValueError, match='all=True'):
+        pro.market_kline_v2(all=False)
+
+
 def test_index_etf_realtime_multi_symbol() -> None:
     session = MagicMock()
     session.headers = {}
@@ -271,13 +298,8 @@ def test_stocks_page_num_params() -> None:
 
 # --------------------------------------------------------------------------- live (optional)
 def _live_pro() -> Optional[Client]:
-    # load sibling .env like live_smoke
     root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-    for path in (
-        os.path.join(root, '.env'),
-        os.path.join(os.path.dirname(root), 'klineshare-live', '.env'),
-        os.path.join(os.path.dirname(root), 'klineshare-level2', '.env'),
-    ):
+    for path in (os.path.join(root, '.env'),):
         if os.path.isfile(path):
             with open(path, encoding='utf-8') as f:
                 for line in f:

@@ -30,11 +30,7 @@ sys.path.insert(0, str(ROOT / 'tests'))
 
 
 def _load_dotenv() -> None:
-    for path in (
-        ROOT / '.env',
-        ROOT.parent / 'klineshare-live' / '.env',
-        ROOT.parent / 'klineshare-level2' / '.env',  # legacy sibling name
-    ):
+    for path in (ROOT / '.env',):
         if not path.is_file():
             continue
         for line in path.read_text(encoding='utf-8').splitlines():

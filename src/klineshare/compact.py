@@ -89,6 +89,8 @@ def expand_compact(payload: Dict[str, Any]) -> List[Dict[str, Any]]:
     Expected keys: ``fields``, ``sep``, ``data`` (list of strings).
     Optional nested minutes: field ``minutes`` with ``minutes_sep`` / ``minutes_row_sep``
     and ``minutes_fields``.
+    Optional nested bars: field ``bars`` with ``bars_sep`` / ``bars_row_sep``
+    and ``bars_fields`` (e.g. ``/v2/market-kline``).
     """
     if not isinstance(payload, dict):
         raise TypeError('compact payload must be a dict')
@@ -109,6 +111,18 @@ def expand_compact(payload: Dict[str, Any]) -> List[Dict[str, Any]]:
     minutes_sep = body.get('minutes_sep') or ','
     minutes_row_sep = body.get('minutes_row_sep') or ';'
 
+    bars_fields = body.get('bars_fields') or (
+        'timestamp',
+        'open',
+        'high',
+        'low',
+        'close',
+        'volume',
+        'amount',
+    )
+    bars_sep = body.get('bars_sep') or ','
+    bars_row_sep = body.get('bars_row_sep') or ';'
+
     out: List[Dict[str, Any]] = []
     for row in rows:
         if isinstance(row, dict):
@@ -124,6 +138,13 @@ def expand_compact(payload: Dict[str, Any]) -> List[Dict[str, Any]]:
                     fields=minutes_fields,
                     sep=minutes_sep,
                     row_sep=minutes_row_sep,
+                )
+            elif key == 'bars':
+                item[key] = decode_minutes_compact(
+                    val,
+                    fields=bars_fields,
+                    sep=bars_sep,
+                    row_sep=bars_row_sep,
                 )
             elif key in ('symbol', 'name', 'trade_date', 'date', 'time', 'market'):
                 item[key] = val if val != '' else None

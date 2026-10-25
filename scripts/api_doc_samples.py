@@ -231,12 +231,16 @@ MAX_CELL = 48
 MAX_LIST_KEEP = 20  # when normalizing huge lists for storage
 MAX_NEST_DEPTH = 2
 
-# 写入文档前脱敏（仅账号/密钥类；不误伤行情 name 字段）
+# 写入文档前脱敏：账号/密钥 + 商业定价/订阅内部字段（不误伤行情 name 等）
 _SENSITIVE_KEYS = frozenset({
     'api_key', 'token', 'secret', 'password', 'email', 'phone',
     'authorization', 'access_token', 'refresh_token',
 })
-_SENSITIVE_NEST = frozenset({'account', 'key', 'billing', 'payment'})
+# 整段遮罩（定价/订阅摘要等）；叶子价字段不全局遮罩，以免误伤行情里的折溢价字段
+_SENSITIVE_NEST = frozenset({
+    'account', 'key', 'billing', 'payment',
+    'subscription_summary', 'tiers', 'tier_poster', 'register_roles',
+})
 
 
 def _is_sensitive_key(key: str) -> bool:
@@ -249,7 +253,7 @@ def _is_sensitive_key(key: str) -> bool:
 
 
 def _sanitize(obj: Any, *, depth: int = 0) -> Any:
-    """脱敏账号/密钥类字段，避免写入公开文档。"""
+    """脱敏账号/密钥与商业字段，避免写入公开 SDK 文档。"""
     if depth > 6:
         return '…'
     if isinstance(obj, dict):
@@ -267,6 +271,22 @@ def _sanitize(obj: Any, *, depth: int = 0) -> Any:
     if isinstance(obj, list):
         return [_sanitize(x, depth=depth + 1) for x in obj[:MAX_LIST_KEEP]]
     return obj
+
+
+def doc_sample_stub(name: str) -> Optional[str]:
+    """若该接口不应固化完整 live 快照，返回替代说明；否则 None。"""
+    if name in ('me', 'refresh_limits'):
+        return (
+            '文档不固化完整 `/v1/me` 快照（含套餐价、角色 ID、配额叠加等）。\n'
+            '请用 `pro.me()` / `pro.refresh_limits()` / `pro.limits.summary()` '
+            '查看当前 Key 的权限与限额。'
+        )
+    if name == 'public_catalog':
+        return (
+            '文档不固化完整 `/public/v1/catalog` 价目与档位表。\n'
+            '请用 `pro.public_catalog()` 或站点文档查看最新档位与 scope 矩阵。'
+        )
+    return None
 
 
 @dataclass
@@ -327,11 +347,7 @@ class FetchReport:
 
 def load_dotenv(root: Path) -> None:
     root = root.resolve()
-    for path in (
-        root / '.env',
-        root.parent / 'klineshare-live' / '.env',
-        root.parent / 'klineshare-level2' / '.env',
-    ):
+    for path in (root / '.env',):
         if not path.is_file():
             continue
         for line in path.read_text(encoding='utf-8').splitlines():
@@ -804,14 +820,15 @@ def load_cache(path: Path) -> Dict[str, LiveSample]:
     blob = json.loads(path.read_text(encoding='utf-8'))
     out: Dict[str, LiveSample] = {}
     for name, item in blob.items():
+        data = _sanitize(item.get('data'))
         out[name] = LiveSample(
             name=name,
             ok=True,
             verified=True,
             detail=item.get('detail', 'cache'),
             title=item.get('title', '缓存样例'),
-            data=item.get('data'),
-            fields=_fields_of(item.get('data')) or tuple(item.get('fields') or ()),
+            data=data,
+            fields=_fields_of(data) or tuple(item.get('fields') or ()),
             source='cache',
         )
     return out

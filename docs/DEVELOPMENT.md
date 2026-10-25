@@ -1,14 +1,18 @@
 # KlineShare Python SDK — 开发依据
 
-本文档是后续开发的约定与设计依据。实现、评审、加接口时以本文为准；与线上 API 冲突时，以 `GET /public/v1/docs.md` / `llms-full.txt` 及 `GET /v1/me` 实测为准，并回写本文。
+**读者：** SDK 维护者（非终端用户文档）。只约定客户端行为与公开契约；**不**描述服务端内部实现、模块名或未公开算法。
+
+实现、评审、加接口时以本文为准；与线上 API 冲突时，以 `GET /public/v1/docs.md` / `llms-full.txt` 及 `GET /v1/me` 实测为准，并回写本文。
 
 | 项 | 值 |
 |----|-----|
 | 包名 | `klineshare` |
-| 当前版本 | `0.2.6`（Beta） |
+| 当前版本 | 以 `pyproject.toml` / `__version__` 与发版 tag 为准 |
 | 运行时 | Python ≥ 3.9 |
 | HTTP | `requests`（同步）；`AsyncClient` 为 to_thread 封装 |
-| 官方数据域 | `https://data.klineshare.cn` |
+| 官方数据域 | `https://klineshare.cn` |
+
+跨仓 HEAD 对照（本地）：`docs/VERSION_BASELINE.local.md`（已 gitignore，勿提交）。
 
 ---
 
@@ -87,14 +91,14 @@ pro.me()                          # 当前 Key 权限与限额
 
 ## 4. 限流与限量（核心原则）
 
-服务端有两套独立约束。SDK **必须在发请求前尽量遵守**，而不是依赖上游裁切或 429 兜底。
+公开契约有两类独立约束。SDK **应在发请求前尽量遵守**，减少无效调用与 429；最终仍以线上响应为准。
 
 ### 4.1 定义
 
-| 类型 | 含义 | 服务端表现 | 客户端职责 |
-|------|------|------------|------------|
-| **限流** | 单位时间内的**请求次数** | 每分钟固定窗口；全局 + 分 scope；超限 `429` + `retry_after` / `Retry-After` | 本地计数；将满则等待或失败，**禁止**无脑重试打满 |
-| **限量** | 单次或单位时间的**业务量** | 如单次 symbol 数、`count`、周期/复权、试用次数、每分钟品种数 | 发前裁切 / 拒绝 /（仅显式 API）分批；**禁止**把超套餐的量原样打上去 |
+| 类型 | 含义 | 公开契约表现 | 客户端职责 |
+|------|------|--------------|------------|
+| **限流** | 单位时间内的**请求次数** | 文档与 `me` 中的每分钟上限；全局 + 分 scope；超限常见 `429` + `retry_after` / `Retry-After` | 本地计数；将满则等待或失败，**禁止**无脑重试打满 |
+| **限量** | 单次或单位时间的**业务量** | 如单次 symbol 数、`count`、周期/复权、试用次数、每分钟品种数（以 `me` / 文档为准） | 发前裁切 / 拒绝 /（仅显式 API）分批；**禁止**把超套餐的量原样打上去 |
 
 权威数据源：
 
@@ -157,7 +161,7 @@ limits = "enforce" | "off" | "advise"
 | 值 | 含义 |
 |----|------|
 | `enforce`（默认） | preflight + RateGate；违规按 §4.3 |
-| `off` | 不拦截（调试 / 对齐服务端原始行为） |
+| `off` | 不拦截（调试；仅依赖线上 429 / 错误响应） |
 | `advise` | 不拦截，但可记录 warning / 返回 hint（若实现成本低再做；可二期） |
 
 ```python
@@ -353,7 +357,7 @@ src/klineshare/
 - [x] `limits="advise"`
 - [x] 异步客户端（`AsyncClient` / `asyncio.to_thread`；原生 httpx 另议）
 - [x] WS 封装与订阅槽限额（`WebSocketFeed`；可选依赖 `websocket-client`）
-- [x] Level2 经 `ks-live`（klineshare-live），通道含 `entrust`，不直连 `/v1/level2/ws`；下载 URL 由公开接口 ``GET /public/v1/sdk/ks-live``（带 `sdk_version` / `os` / `arch`）下发，SDK 不本地拼 OSS
+- [x] Level2 经 `ks-live` 二进制，通道含 `entrust`；下载 URL 由公开接口 ``GET /public/v1/sdk/ks-live``（带 `sdk_version` / `os` / `arch`）下发
 - [x] 日线多标的重负载 `batch="auto"` 拆分
 - [x] SSE 走限额管线
 
@@ -411,8 +415,8 @@ src/klineshare/
 | D1 | SDK 定位为薄客户端，不含策略/回测 | 与官方 API 同步成本最低 |
 | D2 | 限额以 `me` 为准，禁止写死套餐数字 | 套餐动态配置 |
 | D3 | 默认 `overflow=error`，不静默多分批 | 避免多余请求与隐性耗尽 RPM |
-| D4 | `count` 默认裁切到 `max_count` | 「超量」无收益；服务端本也会裁切 |
-| D5 | 限流用固定 60s 窗对齐服务端 | 与文档「每分钟固定窗口」一致 |
+| D4 | `count` 默认裁切到 `max_count` | 「超量」无收益，本地裁切避免浪费请求 |
+| D5 | 限流用固定 60s 窗 | 与公开文档「每分钟」限额表述一致 |
 | D6 | 限额逻辑只进统一 `request` 管线 | 防止各 endpoint 行为不一致 |
 | D7 | 进程内门闩即可，不承诺分布式限流 | SDK 边界清晰 |
 | D8 | 一律经 `Session` 发请求，禁止裸 `requests.get` | Keep-Alive / 连接池 / 统一 headers |
@@ -426,5 +430,5 @@ src/klineshare/
 ## 13. 文档维护
 
 - 负责人：KlineShare SDK 维护者  
-- 更新日期：2026-10-16  
-- 修订方式：行为变更先改本文与测试，再改代码；PR 需注明是否触及 §4 / §5 / §12  
+- 更新日期：2026-10-25  
+- 修订方式：行为变更先改本文与测试，再改代码；PR 需注明是否触及 §4 / §5 / §12；跨仓 HEAD 只写本地 `VERSION_BASELINE.local.md`  

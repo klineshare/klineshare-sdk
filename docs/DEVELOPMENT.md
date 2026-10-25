@@ -317,6 +317,22 @@ src/klineshare/
 - 可选：`pandas` extra  
 - 不把 `httpx` / 异步客户端塞进默认依赖，除非单独立项  
 
+### 8.4 本地命令
+
+```bash
+pip install -e ".[dev]"
+pytest
+python scripts/check_endpoint_coverage.py --check-gzip
+python scripts/gen_api_usage_doc.py            # 在线拉样例并刷新 docs/API_USAGE.md
+python scripts/gen_api_usage_doc.py --offline  # 仅用缓存样例
+python scripts/gen_api_usage_doc.py --strict
+# 真实 Key 冒烟（KLINESHARE_API_KEY）
+python scripts/live_smoke.py --quick
+python scripts/live_smoke.py --ws --sse --level2
+```
+
+用户向 README 只保留安装与用法；本仓开发步骤写在本节与 [RELEASE.md](RELEASE.md)。
+
 ---
 
 ## 9. 开发阶段（实施顺序）
@@ -324,7 +340,7 @@ src/klineshare/
 ### Phase A — 开发依据与基线（本文）
 
 - [x] 本文档  
-- [x] README「开发」节链到本文  
+- [x] README 面向用户；开发步骤见本文 §8.4 / RELEASE.md  
 
 ### Phase B — 限额骨架（优先）
 
